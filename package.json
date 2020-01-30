@@ -1,0 +1,21 @@
+{
+  "name": "node-stream",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/express": "^4.17.2",
+    "@types/nodemon": "^1.19.0",
+    "nodemon": "^2.0.2",
+    "ts-node": "^8.6.2"
+  },
+  "scripts": {
+    "dev": "nodemon"
+  },
+  "dependencies": {
+    "@types/node": "^13.5.2",
+    "csv-parse": "^4.8.5",
+    "express": "^4.17.1",
+    "typescript": "^3.7.5"
+  }
+}
