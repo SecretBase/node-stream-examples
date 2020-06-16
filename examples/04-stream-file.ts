@@ -9,6 +9,9 @@ app.get("/csv", (req, res) => {
 
   res.set("Content-Type", "text/plain");
 
+  // This is extremely bad when res end on client side.
+  // This will create memory leak since the readSteam will not teardown and close properly
+  // always use pipeline
   readStream.pipe(res);
 
   readStream.on("end", () => {
