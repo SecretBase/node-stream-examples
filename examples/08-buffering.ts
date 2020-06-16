@@ -1,16 +1,18 @@
+// use node 14 for this example
 import path from "path";
 import { createReadStream } from "fs";
-import { Transform, TransformCallback } from "stream";
+import { Transform, TransformCallback, pipeline } from "stream";
 import csvParse from "csv-parse";
 import { promisify } from "util";
-import { checkServerIdentity } from "tls";
+
+const pipe = promisify(pipeline);
 
 const sleep = promisify(setTimeout);
 
 class TrimTransform extends Transform {
   constructor() {
     super({
-      objectMode: true
+      objectMode: true,
     });
   }
   _transform(
@@ -33,35 +35,41 @@ const main = async () => {
   const csParser = csvParse({
     delimiter: ",",
     bom: true,
-    columns: true
+    columns: true,
   });
 
   const trimCsv = new TrimTransform();
 
-  readStream.pipe(csParser).pipe(trimCsv);
+  // typescript broken on async generators function
+  // @ts-ignore
+  await pipe(readStream, csParser, trimCsv, async function* (source) {
+    const CHUNK_SIZE = 50;
 
-  const CHUNK_SIZE = 50;
+    let chunk = [];
 
-  let chunk = [];
+    for await (const data of source) {
+      if (chunk.length === CHUNK_SIZE) {
+        // flush the chunk
+        console.dir(chunk);
+        console.log("flush chunk");
+        await sleep(100);
+        chunk.length = 0;
+      }
 
-  for await (const data of trimCsv) {
-    if (chunk.length === CHUNK_SIZE) {
-      // flush the chunk
-      console.dir(chunk);
-      console.log("flush chunk");
-      await sleep(100);
-      chunk.length = 0;
+      chunk.push(data);
     }
 
-    chunk.push(data);
-  }
-
-  // flush the last chunk
-  console.dir(chunk);
-  console.log("flush the last chunk");
-  chunk.length = 0;
+    // flush the last chunk
+    console.dir(chunk);
+    console.log("flush the last chunk");
+    chunk.length = 0;
+  });
 };
 
 main()
   .then(() => console.log("done"))
-  .catch(console.error);
+  .catch((error) => {
+    console.log("error happen");
+    console.error(error);
+    process.exit(1);
+  });
